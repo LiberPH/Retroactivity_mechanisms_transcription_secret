@@ -1,0 +1,96 @@
+begin model
+	
+	begin parameters
+	#k_act 3600*60
+	#k_inact 18*60
+   
+	kon ((3*10^8)*60.0)/((6.022*(10.0^23)*(42.0*(10.0^(-15)))))
+	koff 30*60
+	kon2 kon
+	koff2 koff
+	kon4 kon2
+	koff4 0.03*60
+	kon3 (5*10^8)*60.0/((6.022*(10.0^23)*(42.0*(10.0^(-15)))))
+	koff3 50*60
+	
+	s 50.0
+	d 0.02#ln(2)/tau
+	d2 0.06
+	d3 0.02 
+	d5 d3
+	k 0.09/50
+	k2 0.8
+	a 0.01
+	k3 0.5
+	kdim 0
+	kundim 0
+	k4 0.1*k3
+	
+	c 1
+	
+	ep 0.25
+
+end parameters
+
+begin molecule types
+	#Isolated
+	S(b) #Signaling component it hS one DNA binding site l
+	A(b) #Autoactivator it hS also one DNA binding site to its own promoter
+	AaP(b1,b2)  #Autoactivator promoter hS 8 potential sites to be bound by TF. 
+	#A single binding can change the whole promoter to an active transcription form
+	C1(b)
+	Null()
+	RNA()
+	RP(b)
+	AA(b1,b2)
+end molecule types
+
+begin seed species
+	#Isolated
+	S(b) s
+	A(b) 0
+	AaP(b1,b2) 1
+	$Null() 1
+	RNA() 0
+	RP(b) 0
+	C1(b) 0
+	AA(b1,b2) 0
+end  seed species
+
+begin observables
+	Molecules Aa A(b)
+	Molecules AA AA(b1,b2)
+	Molecules C2 AaP(b1!0,b2!1).AA(b1!0,b2!1)
+	Molecules C4a AaP(b1,b2!0).A(b!0)
+	Molecules C4b AaP(b1!0,b2).A(b!0)
+	Molecules S S(b)
+	Molecules RNA RNA()
+end observables
+
+begin reaction rules
+
+	AaP(b1,b2) -> AaP(b1,b2) + RNA() a
+
+	AaP(b1,b2) + S(b) -> AaP(b1,b2) + S(b) + RNA() k
+
+	RNA() -> RNA() + A(b) k2 
+	
+	A(b) + A(b) <-> AA(b1,b2) 2*kdim,kundim
+	
+	RNA() -> Null d2#*RNA/(K+RNA) #k_degrRNA
+	
+	A(b) -> Null d
+	
+	AA(b1,b2)  -> Null d
+	
+	
+end reaction rules
+end model
+
+#ACTIONS
+
+generate_network({overwrite=>1});
+#simulate_ode({t_end=>1440,n_steps=>1440,verbose=>1});
+
+simulate_ssa({t_end=>1440,n_steps=>2880});
+
